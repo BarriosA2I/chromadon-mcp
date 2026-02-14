@@ -144,6 +144,20 @@ export const tools = [
             required: ['tabId'],
         },
     },
+    {
+        name: 'send_chat_message',
+        description: 'Send a message to the CHROMADON AI assistant chat panel. The message will be processed by the AI orchestrator just as if typed into the chat sidebar. Use this to interact with the AI assistant.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                text: {
+                    type: 'string',
+                    description: 'The message text to send to the AI assistant.',
+                },
+            },
+            required: ['text'],
+        },
+    },
 ];
 export async function handle(name, args) {
     switch (name) {
@@ -198,6 +212,10 @@ export async function handle(name, args) {
             if (args.amount !== undefined)
                 body.amount = args.amount;
             const result = await client.post(`/tabs/scroll/${tabId}`, body);
+            return JSON.stringify(result, null, 2);
+        }
+        case 'send_chat_message': {
+            const result = await client.post('/chat/send', { text: args.text });
             return JSON.stringify(result, null, 2);
         }
         default:

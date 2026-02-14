@@ -9,13 +9,13 @@ import { processScreenshot } from '../screenshot.js';
 export const tools: Tool[] = [
   {
     name: 'take_screenshot',
-    description: 'Capture a screenshot of a browser tab. Returns the image inline (resized to max 1920px). If no tabId is given, screenshots the active tab.',
+    description: 'Capture a screenshot of a browser tab or the full CHROMADON Desktop window. If no tabId is given, captures the entire Desktop window including the AI chat panel, sidebar, and all UI elements.',
     inputSchema: {
       type: 'object' as const,
       properties: {
         tabId: {
           type: 'number',
-          description: 'The tab ID to screenshot. If omitted, uses the active tab.',
+          description: 'The tab ID to screenshot. If omitted, captures the full Desktop window (including chat panel).',
         },
       },
     },
@@ -66,14 +66,14 @@ export type ToolResult = {
 export async function handle(name: string, args: Record<string, unknown>): Promise<ToolResult[] | null> {
   switch (name) {
     case 'take_screenshot': {
-      // Determine which tab to screenshot
-      let tabId = args.tabId;
-      if (tabId === undefined) {
-        // Get active tab ID from /tabs
-        const tabsResult = await client.get<{ activeTabId: number }>('/tabs');
-        tabId = tabsResult.activeTabId;
+      let pngBuffer: Buffer;
+      if (args.tabId !== undefined) {
+        // Screenshot a specific tab
+        pngBuffer = await client.getBinary(`/tabs/screenshot/${args.tabId}`);
+      } else {
+        // No tabId — capture the full Desktop window (includes chat panel, sidebar, etc.)
+        pngBuffer = await client.getBinary('/screenshot');
       }
-      const pngBuffer = await client.getBinary(`/tabs/screenshot/${tabId}`);
       const screenshot = await processScreenshot(pngBuffer);
       return [
         { type: 'image', data: screenshot.data, mimeType: screenshot.mimeType },

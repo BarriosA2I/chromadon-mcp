@@ -147,6 +147,20 @@ export const tools: Tool[] = [
       required: ['tabId'],
     },
   },
+  {
+    name: 'send_chat_message',
+    description: 'Send a message to the CHROMADON AI assistant chat panel. The message will be processed by the AI orchestrator just as if typed into the chat sidebar. Use this to interact with the AI assistant.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        text: {
+          type: 'string',
+          description: 'The message text to send to the AI assistant.',
+        },
+      },
+      required: ['text'],
+    },
+  },
 ];
 
 export async function handle(name: string, args: Record<string, unknown>): Promise<string | null> {
@@ -191,6 +205,10 @@ export async function handle(name: string, args: Record<string, unknown>): Promi
       if (args.direction) body.direction = args.direction;
       if (args.amount !== undefined) body.amount = args.amount;
       const result = await client.post(`/tabs/scroll/${tabId}`, body);
+      return JSON.stringify(result, null, 2);
+    }
+    case 'send_chat_message': {
+      const result = await client.post('/chat/send', { text: args.text });
       return JSON.stringify(result, null, 2);
     }
     default:
