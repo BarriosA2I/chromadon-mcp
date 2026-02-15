@@ -7,12 +7,14 @@ import * as tabs from './tabs.js';
 import * as interaction from './interaction.js';
 import * as observation from './observation.js';
 import * as system from './system.js';
+import * as obs from './obs.js';
 
 export const TOOLS: Tool[] = [
   ...tabs.tools,
   ...interaction.tools,
   ...observation.tools,
   ...system.tools,
+  ...obs.tools,
 ];
 
 export type ContentBlock =
@@ -34,7 +36,8 @@ export async function handleToolCall(
     const textResult =
       (await tabs.handle(name, args)) ??
       (await interaction.handle(name, args)) ??
-      (await system.handle(name, args));
+      (await system.handle(name, args)) ??
+      (await obs.handle(name, args));
 
     if (textResult !== null) {
       return { content: [{ type: 'text', text: textResult }] };

@@ -12,6 +12,7 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { TOOLS, handleToolCall } from './tools/index.js';
+import { obsClient } from './tools/obs.js';
 
 function log(msg: string): void {
   process.stderr.write(`[chromadon-mcp] ${msg}\n`);
@@ -20,7 +21,7 @@ function log(msg: string): void {
 const server = new Server(
   {
     name: 'chromadon',
-    version: '1.0.0',
+    version: '1.1.0',
   },
   {
     capabilities: {
@@ -42,8 +43,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 // Graceful shutdown
-const shutdown = () => {
+const shutdown = async () => {
   log('Shutting down');
+  await obsClient.disconnect();
   process.exit(0);
 };
 process.on('SIGINT', shutdown);
@@ -54,6 +56,19 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   log(`CHROMADON MCP Server running (${TOOLS.length} tools)`);
+
+  // Connect to OBS in background (non-blocking — server works even if OBS is offline)
+  obsClient
+    .connect()
+    .then(() => {
+      log('OBS WebSocket connected');
+    })
+    .catch((err) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      log(
+        `OBS connection failed: ${msg} — OBS tools will return errors until OBS is available`
+      );
+    });
 }
 
 main().catch((error) => {
